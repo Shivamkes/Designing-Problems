@@ -1,0 +1,212 @@
+class Twitter {
+    
+     public:
+    int time;
+    struct node
+    {
+        int ID;
+        unordered_map<int,int>follow_hash;
+        priority_queue<pair<int,int>,vector<pair<int,int>>,greater<pair<int,int>>>pq;
+        int tweets;
+    };
+    
+    unordered_map<int,node*>twitter_hash;
+
+    /** Initialize your data structure here. */
+    
+    Twitter() 
+    {
+      time=0;  
+    }
+    
+    /** Compose a new tweet. */
+    void postTweet(int userId, int tweetId)
+    {
+        time++;
+        if(twitter_hash.find(userId)==twitter_hash.end())
+        {
+            node *newNode=new node();
+            newNode->ID=userId;
+            newNode->tweets=1;
+            newNode->pq.push({time,tweetId});
+            
+            twitter_hash[userId]=newNode;
+        }
+        else
+        {
+            node *currNode=twitter_hash[userId];
+            
+            if(currNode->tweets>=10)
+            {
+                currNode->pq.pop();
+            }
+            currNode->pq.push({time,tweetId});
+            
+            currNode->tweets=min(10,currNode->tweets+1);
+        }
+        
+    }
+    
+    /** Retrieve the 10 most recent tweet ids in the user's news feed. Each item in the news feed must be posted by users who the user followed or by the user herself. Tweets must be ordered from most recent to least recent. */
+    
+    
+    vector<int> getNewsFeed(int userId)
+    {
+          time++;
+       
+          vector<int>res;
+          priority_queue<pair<int,int>,vector<pair<int,int>>,greater<pair<int,int>>>pq2;
+          int sz=0;
+          vector<pair<int,int>>v;
+        
+        if(twitter_hash.find(userId)==twitter_hash.end())
+        {
+            return res;
+        }
+               
+        
+         node *currNode=twitter_hash[userId];
+
+       if(currNode->tweets>0)
+       {
+        while(!currNode->pq.empty())
+        {
+           
+            pq2.push(currNode->pq.top());
+            
+         
+            
+            v.push_back(currNode->pq.top());
+            
+            currNode->pq.pop();
+            sz++;
+        }
+           
+          for(auto it:v)
+        {
+            currNode->pq.push(it);
+        }
+        
+        v.clear();  
+       }
+        
+        
+       
+        
+        for(auto it:currNode->follow_hash)
+        {
+            
+        if(it.second==1)
+        {
+            
+          if(twitter_hash.find(it.first)==twitter_hash.end())
+        {
+           continue;
+        }
+            
+            if(it.first==userId)
+            {
+                continue;
+            }
+           node *preNode=twitter_hash[it.first]; 
+           v.clear();
+            
+            
+         while(!preNode->pq.empty())
+        {   
+             if(sz>=10)
+             { 
+           
+             if(pq2.top().first<preNode->pq.top().first)  
+             {   
+            pq2.pop();
+            pq2.push(preNode->pq.top());
+            v.push_back(preNode->pq.top());
+            preNode->pq.pop();
+             }
+             else
+             {
+              v.push_back(preNode->pq.top());
+              preNode->pq.pop();      
+             }    
+            } 
+             else
+             {
+                  sz++;
+               
+                  pq2.push(preNode->pq.top());
+                  v.push_back(preNode->pq.top());
+                  preNode->pq.pop();
+             }    
+        }
+            
+        
+         for(auto it:v)
+        {
+           
+           preNode->pq.push(it);
+        }
+     
+        }
+
+        }
+        
+        while(!pq2.empty())
+        {
+            // cout<<pq2.top().second<<" _**__ "<<pq2.top().first<<endl;
+           res.push_back(pq2.top().second);  
+           pq2.pop();
+        }
+        
+        
+        
+        reverse(res.begin(),res.end());
+        return res;
+    }
+    
+    /** Follower follows a followee. If the operation is invalid, it should be a no-op. */
+    void follow(int followerId, int followeeId) 
+    {
+        time++;
+        if(twitter_hash.find(followerId)==twitter_hash.end())
+        {
+            // cout<<followerId<<" @ "<<followeeId<<endl;
+            node *newNode=new node();
+            newNode->ID=followerId;
+            newNode->follow_hash[followeeId]=1;
+            newNode->tweets=0;
+            
+             
+            twitter_hash[followerId]=newNode;
+        }
+        else
+        {
+             node *currNode=twitter_hash[followerId];
+             currNode->follow_hash[followeeId]=1;   
+        }
+
+      }
+    
+    /** Follower unfollows a followee. If the operation is invalid, it should be a no-op. */
+    void unfollow(int followerId, int followeeId) 
+    {
+        
+         time++;
+        
+         if(twitter_hash.find(followerId)!=twitter_hash.end())
+        {
+             node *currNode=twitter_hash[followerId];
+             currNode->follow_hash[followeeId]=0;
+        }
+        
+    }
+};
+
+/**
+ * Your Twitter object will be instantiated and called as such:
+ * Twitter* obj = new Twitter();
+ * obj->postTweet(userId,tweetId);
+ * vector<int> param_2 = obj->getNewsFeed(userId);
+ * obj->follow(followerId,followeeId);
+ * obj->unfollow(followerId,followeeId);
+ */
